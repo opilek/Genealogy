@@ -73,14 +73,14 @@ public class Person implements Comparable<Person>
                 return null;
             }
             // Tworzymy zmienną 'youngest', która będzie przechowywać referencję do najmłodszego dziecka
-            Person youngest=null;
+            Person youngest=this.children.iterator().next();
             // Przechodzimy przez wszystkie dzieci w liście 'children'
             for(Person child: children)
             {
-                //if(youngest==null || child.getBirth().isAfter(youngest.getBirth()));
+                //if(child.getBirth().isAfter(youngest.getBirth()));
                 //Rozwiązanie wykorzystanie interfejsu Compaarable
 
-                if(youngest==null || child.compareTo(youngest)>0)
+                if(child.compareTo(youngest)>0)
                 {
 
                     youngest=child;
@@ -98,7 +98,7 @@ public class Person implements Comparable<Person>
         ArrayList<Person> sortChildren = new ArrayList<>(children);
 
         // Sortujemy dzieci przy użyciu Collections.sort()
-        Collections.sort(sortChildren);
+        Collections.sort(sortChildren,Collections.reverseOrder());
 
         // Zwracamy posortowaną listę dzieci
         return sortChildren;
