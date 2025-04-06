@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Genealogy.iml" filepath="$PROJECT_DIR$/Genealogy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/resrc/resrc.iml" filepath="$PROJECT_DIR$/resrc/resrc.iml" />
     </modules>
   </component>
 </project>

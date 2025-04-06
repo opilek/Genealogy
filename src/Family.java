@@ -8,6 +8,7 @@ public class Family
     private Map<String,Person> familyMap;
 
 
+
     // Konstruktor klasy Family, który inicjalizuje mapę
     public Family()
     {
