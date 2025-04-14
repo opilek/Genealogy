@@ -2,9 +2,13 @@
 
 import java.io.*;
 import java.time.LocalDate;
+import java.time.chrono.ChronoLocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 
 public class Person implements Comparable<Person>
@@ -17,6 +21,7 @@ public class Person implements Comparable<Person>
 
 
     private Set<Person> children;
+    private Set<Person> parents;
 
 
     //Gettery
@@ -33,6 +38,7 @@ public class Person implements Comparable<Person>
         return birth;
     }
     public LocalDate getDeath() {return death;}
+    public Set<Person> getParents() {return parents;}
 
     //Konstruktor
     public Person(String firstName,String lastName, LocalDate birth,LocalDate death )
@@ -41,6 +47,7 @@ public class Person implements Comparable<Person>
         this.lastName=lastName;
         this.birth=birth;
         this.children=new HashSet<>();// Zainicjalizowanie pustego zbioru dzieci
+        this.parents=new HashSet<>();// Zainicjalizowanie pustego zbioru rodziców
         this.death=death;
 
     }
@@ -275,6 +282,279 @@ public class Person implements Comparable<Person>
 
         return new ArrayList<>();
     }
+
+    //Zad 2
+    public String toPlantUmlObjectDiagram()
+    {
+        String result="@startuml\n";
+
+        // Tworzy unikalny identyfikator dla tej osoby (np. p_Anna-Kowalska)
+        String personId="p_" + this.firstName + "-" + this.lastName;
+
+        // Dodaje obiekt reprezentujący tę osobę do diagramu UML
+        result+="object "  + personId + "{\n" + " "+ firstName + "-" + lastName + "\n" +"}\n";
+
+
+        // Pętla po wszystkich rodzicach tej osoby
+        for(Person parent: parents)
+        {
+            String parentId="p_" + parent.getFirstName() + "-" + parent.getLastName();
+
+            result+="object " + parentId + "{\n" + " "+ parent.getFirstName()+ "-" + parent.getLastName() + "\n" +"}\n";
+
+            // Dodaje relację (strzałkę) między osobą a jej rodzicem z podpisem "dziecko"
+            result+=personId + "-->" + parentId + " :dziecko\n";
+        }
+
+        result+="@enduml";
+
+        return result;
+
+    }
+
+    //Zad 3
+    public static String toPlantUmlObjectDiagram(List<Person> persons)
+    {
+        String result="@startuml\n";
+
+        // Mapa przypisująca każdemu obiektowi Person unikalny identyfikator tekstowy
+        Map<Person,String> idMap=new HashMap<>();
+
+        // 1. Pętla przypisująca ID każdej osobie (np. p_Anna-Kowalska)
+        for(Person person: persons)
+        {
+            idMap.put(person,"p_" + person.getFirstName() + "-" + person.getLastName());
+        }
+
+        // 2. Tworzenie definicji obiektów UML dla każdej osoby
+        for(Person person: persons)
+        {
+            String id=idMap.get(person);
+
+            result+="object " + id + "{\n" + " " + person.getFirstName() + "-" + person.getLastName() + "\n" +"}\n";
+        }
+
+        // 3. Tworzenie relacji między osobą a jej rodzicami
+        for(Person person: persons)
+        {
+            for(Person parent: person.getParents())
+            {
+                // Sprawdzamy, czy rodzic też jest na liście osób — jeśli tak, dodajemy relację
+                if(idMap.containsKey(parent))
+                {
+                    result+=idMap.get(person)+ "-->" + idMap.get(parent) + " :dziecko\n";
+                }
+            }
+        }
+
+        result+="@enduml";
+
+
+        return result;
+    }
+
+
+    //Zad 4
+    public static List<Person> filterByNameSubstring(List<Person> persons,String substring)
+    {
+        if(substring==null || substring.isEmpty())
+        {
+            return null;
+        }
+
+        // Zamieniamy szukany fragment na małe litery, żeby porównywać bez względu na wielkość liter
+        String lowersubstring=substring.toLowerCase();
+
+        // Tworzymy nową listę na osoby, które pasują do filtra
+        List<Person> result=new ArrayList<>();
+
+        // Iterujemy po wszystkich osobach z listy wejściowej
+        for(Person person: persons)
+        {
+            // Iterujemy po wszystkich osobach z listy wejściowej
+            if(person.getFirstName().toLowerCase().contains(lowersubstring) || person.getLastName().toLowerCase().contains(lowersubstring))
+            {
+                result.add(person);
+            }
+        }
+
+        return result;
+
+    }
+
+    //Zad 5
+    public static List<Person> sortByBirthYear(List<Person> persons)
+    {
+        // Tworzymy nową listę na podstawie wejściowej, żeby nie zmieniać oryginału
+        List<Person> sorted=new ArrayList<>(persons);
+
+        // Sortujemy listę osób według roku urodzenia (rosnąco — od najstarszych do najmłodszych)
+        sorted.sort(Comparator.comparing(p ->p.getBirth().getYear()));
+
+        // p -> - lambda, czyli funkcja anonimowa, czyli funkcja zdefiniowana bez imienia.
+        // bardzo przydatne gdy chcemy utworzyć jakś prościutką funkcje np a + b
+
+        return sorted;
+    }
+
+    //Zad 6 (pomocnicza)
+    public long getLifeSpam()
+    {
+        if(death==null)
+        {
+            return -1;
+        }
+        // Obliczamy liczbę dni między datą urodzenia a śmierci
+        return ChronoUnit.DAYS.between(birth,death);
+    }
+    //Zad 6
+    public static List<Person> sortByDeathYear(List<Person> persons)
+    {
+        List<Person> sorted=new ArrayList<>();
+
+        for(Person person: persons)
+        {
+            if(person.getDeath()!=null)
+            {
+                sorted.add(person);
+            }
+        }
+
+        // Sortowanie listy 'sorted' za pomocą komparatora, który porównuje osoby po długości życia
+        Collections.sort(sorted, new Comparator<Person>() {
+            @Override
+            public int compare(Person p1, Person p2)
+            {
+                // Porównanie długości życia dwóch osób (p1 i p2)
+                // Używamy Long.compare() do porównania wartości long (długość życia) w sposób bezpieczny
+                // Zwracamy wartość dodatnią, jeśli p2 żył dłużej niż p1 (bo chcemy sortować malejąco)
+
+                return Long.compare(p2.getLifeSpam(),p1.getLifeSpam());
+            }
+        });
+
+        return sorted;
+    }
+
+    //Zad 7
+    public static Person getOldestLivingPerson(List<Person> persons)
+    {
+
+        Person oldest=null;
+
+        for(Person person: persons)
+        {
+           if(person.getDeath()!= null)
+           {
+               if(oldest==null || person.getBirth().isBefore(oldest.getBirth()))
+               {
+                   oldest=person;
+               }
+           }
+        }
+
+        return oldest;
+    }
+
+    //Zad 8
+    // Przyjmuje funkcję 'postProcess' do przetworzenia każdej linii przed jej dodaniem do wyniku.
+    public String toPlantUMLWithParents(Function<String, String> postProcess)
+    {
+        // Inicjalizujemy zmienną 'result', która przechowa cały kod PlantUML
+        // Dodajemy początek diagramu
+        String result = "@startuml\n";
+
+        // Tworzymy unikalny identyfikator dla osoby, używając jej tożsamości w pamięci
+        String personId = "obj" + System.identityHashCode(this);
+
+        // Tworzymy linię tekstową dla reprezentacji osoby w diagramie, zawierając imię i nazwisko
+        String personLine = "object \"" + this.firstName + " " + this.lastName + "\" as" + personId;
+
+        // Zastosowanie funkcji 'postProcess' do przetworzenia linii reprezentującej osobę
+        result += postProcess.apply(personLine);
+        result += "\n"; // Dodajemy nową linię po obiekcie osoby
+
+        // Iterujemy po rodzicach osoby, aby dodać ich do diagramu
+        for (Person parent : this.parents)
+        {
+            // Tworzymy unikalny identyfikator dla każdego rodzica, używając jego tożsamości w pamięci
+            String parentId = "obj" + System.identityHashCode(parent);
+
+            // Tworzymy linię tekstową dla reprezentacji rodzica w diagramie
+            String parentLine = "object \"" + parent.getFirstName() + " " + parent.getLastName() + "\" as" + parentId;
+
+            // Zastosowanie funkcji 'postProcess' do przetworzenia linii reprezentującej rodzica
+            result += postProcess.apply(parentLine);
+            result += "\n"; // Dodajemy nową linię po obiekcie rodzica
+
+            // Dodajemy połączenie między osobą a jej rodzicem w diagramie
+            result += personId + " --> " + parentId + "\n";
+        }
+
+        // Kończymy diagram PlantUML
+        result += "@enduml\n";
+
+        // Zwracamy wynikowy tekst diagramu
+        return result;
+    }
+
+
+    // Metoda generująca diagram UML dla listy osób, uwzględniająca ich dzieci.
+// Przyjmuje również funkcję 'postProcess' do przetwarzania linii tekstowych oraz
+// 'condition', który sprawdza, czy dany obiekt spełnia określony warunek.
+    public static String toUML(List<Person> people, Function<String, String> postProcess, Predicate<Person> condition)
+    {
+        // Inicjalizujemy zmienną 'result', która będzie przechowywać cały wygenerowany kod PlantUML.
+        // Na początku dodajemy początek diagramu.
+        String result = "@startuml\n";
+
+        // Tworzymy mapę 'idMap', która przechowuje przypisania osób do unikalnych identyfikatorów.
+        Map<Person, String> idMap = new HashMap<>();
+
+        // Iterujemy po liście osób, aby dodać każdą osobę do diagramu
+        for (Person person : people)
+        {
+            // Tworzymy unikalny identyfikator dla każdej osoby na podstawie jej tożsamości w pamięci.
+            String personId = "obj" + System.identityHashCode(person);
+
+            // Przypisujemy osobie unikalny identyfikator w mapie 'idMap'.
+            idMap.put(person, personId);
+
+            // Tworzymy linię reprezentującą obiekt osoby w diagramie, używając jej imienia i nazwiska.
+            String personLine = "object \"" + person.getFirstName() + " " + person.getLastName() + "\" as" + personId;
+
+            // Jeśli osoba spełnia warunek z Predicate, stosujemy funkcję 'postProcess' do przetworzenia tej linii.
+            if (condition.test(person))
+            {
+                personLine = postProcess.apply(personLine);
+            }
+
+            // Dodajemy przetworzoną linię do wyniku (diagramu UML).
+            result += personLine + "\n";
+        }
+
+        // Iterujemy po wszystkich osobach i ich dzieciach, aby dodać połączenia między rodzicami a dziećmi.
+        for (Person person : people)
+        {
+            for (Person child : person.getChildren())
+            {
+                // Pobieramy identyfikatory rodzica i dziecka z mapy 'idMap'.
+                String parentId = idMap.get(person);
+                String childId = idMap.get(child);
+
+                // Tworzymy połączenie między rodzicem a dzieckiem w diagramie (strzałka UML).
+                result += parentId + " --> " + childId + "\n";
+            }
+        }
+
+        // Kończymy diagram UML.
+        result += "@enduml\n";
+
+        // Zwracamy wygenerowany tekst (kod PlantUML).
+        return result;
+    }
+
+    
 
 
 
